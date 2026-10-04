@@ -2,7 +2,7 @@
   "servers": {
     "ado-remote-mcp": {
       "type": "http",
-      "url": "https://ado-mcp-gateway.yellowmeadow-a79e4e9c.westus2.azurecontainerapps.io/mcp",
+      "url": "https://<your-container-app-fqdn>/mcp",
       "headers": {
         "Authorization": "Bearer ${input:ado_gateway_token}"
       }
