@@ -1,0 +1,19 @@
+{
+  "servers": {
+    "ado-remote-mcp": {
+      "type": "http",
+      "url": "https://ado-mcp-gateway.yellowmeadow-a79e4e9c.westus2.azurecontainerapps.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:ado_gateway_token}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "id": "ado_gateway_token",
+      "type": "promptString",
+      "description": "ado-mcp-gateway shared token (MCP_SHARED_TOKEN)",
+      "password": true
+    }
+  ]
+}
