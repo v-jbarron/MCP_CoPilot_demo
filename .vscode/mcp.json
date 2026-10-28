@@ -2,18 +2,55 @@
   "servers": {
     "ado-remote-mcp": {
       "type": "http",
-      "url": "https://<your-container-app-fqdn>/mcp",
+      "url": "${input:ado_gateway_url}",
       "headers": {
         "Authorization": "Bearer ${input:ado_gateway_token}"
       }
+    },
+    "ado-local-npm": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp@2.10.0",
+        "${input:ado_org}",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories"
+      ]
+    },
+    "ado-local-source": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/mcp/azure-devops-mcp-src/dist/index.js",
+        "${input:ado_org}",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories"
+      ]
     }
   },
   "inputs": [
     {
+      "id": "ado_gateway_url",
+      "type": "promptString",
+      "description": "ado-mcp-gateway MCP endpoint URL (https://<your-container-app-fqdn>/mcp)"
+    },
+    {
       "id": "ado_gateway_token",
       "type": "promptString",
-      "description": "ado-mcp-gateway shared token (MCP_SHARED_TOKEN)",
+      "description": "ado-mcp-gateway shared token (MCP_SHARED_TOKEN), not your Azure DevOps login",
       "password": true
+    },
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name for the local servers (for example contoso)"
     }
   ]
 }

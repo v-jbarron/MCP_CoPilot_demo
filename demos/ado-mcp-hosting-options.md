@@ -14,7 +14,7 @@ This document summarizes the main ways to expose Azure DevOps MCP tools to GitHu
 
 ## Workspace Default: Azure Container Apps Gateway
 
-The workspace connects to `https://ado-mcp-gateway.yellowmeadow-a79e4e9c.westus2.azurecontainerapps.io/mcp` over HTTP. The endpoint requires authentication; this repository configures the destination but does not provision the gateway or its identity settings.
+The workspace connects to your gateway's `https://<your-container-app-fqdn>/mcp` endpoint over HTTP; VS Code prompts for the URL and shared token. The endpoint requires authentication; this repository configures the client but does not provision the gateway or its identity settings.
 
 ## Option 1: Remote Azure DevOps MCP Server
 
@@ -48,7 +48,7 @@ If you do not want to pin one organization in the config file, you can also use 
 
 ## Option 2: Local npm Package
 
-Use this when you want a simple local setup and already trust the machine's Node.js runtime.
+Use this when you want a simple local setup and already trust the machine's Node.js runtime. This repository's `.vscode/mcp.json` includes this option as `ado-local-npm`.
 
 ```json
 {
@@ -60,22 +60,17 @@ Use this when you want a simple local setup and already trust the machine's Node
     }
   ],
   "servers": {
-    "ado-local": {
+    "ado-local-npm": {
       "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
-        "@azure-devops/mcp",
+        "@azure-devops/mcp@2.10.0",
         "${input:ado_org}",
-        "--authentication",
-        "azcli",
         "-d",
         "core",
-        "-d",
         "work",
-        "-d",
         "work-items",
-        "-d",
         "repositories"
       ]
     }
@@ -83,9 +78,12 @@ Use this when you want a simple local setup and already trust the machine's Node
 }
 ```
 
+By default, the server opens a browser for Microsoft Entra sign-in (in GitHub Codespaces, it uses the Azure CLI login instead). To reuse an existing Azure CLI login elsewhere, add `"--authentication", "azcli"` to the arguments.
+
 Why choose it:
 
 - Fewest local files.
+- Each user signs in as themselves; no shared token or PAT.
 - Easy to swap authentication modes.
 - Good for individual setup on a dev workstation.
 
@@ -93,6 +91,7 @@ Tradeoffs:
 
 - Depends on Node.js being installed and available.
 - First start may download packages.
+- Pin the version so tool names and schemas don't change between sessions.
 
 ## Option 3: Local Docker Container
 
@@ -138,12 +137,14 @@ Tradeoffs:
 
 ## Option 4: Run from Source
 
-Use this when you need to debug the server or test an unreleased change.
+Use this when you need to debug the server or test an unreleased change. This repository's `.vscode/mcp.json` includes this option as `ado-local-source`.
+
+From the root of this repository, clone a tagged release into the git-ignored `mcp/azure-devops-mcp-src` folder and build it:
 
 ```bash
-git clone https://github.com/microsoft/azure-devops-mcp.git
-cd azure-devops-mcp
-npm install
+git clone --depth 1 --branch v2.10.0 https://github.com/microsoft/azure-devops-mcp.git mcp/azure-devops-mcp-src
+cd mcp/azure-devops-mcp-src
+npm ci
 npm run build
 ```
 
@@ -159,17 +160,24 @@ Then point the client at the built entry point:
     }
   ],
   "servers": {
-    "ado-source": {
+    "ado-local-source": {
       "type": "stdio",
       "command": "node",
       "args": [
-        "${workspaceFolder}/dist/index.js",
-        "${input:ado_org}"
+        "${workspaceFolder}/mcp/azure-devops-mcp-src/dist/index.js",
+        "${input:ado_org}",
+        "-d",
+        "core",
+        "work",
+        "work-items",
+        "repositories"
       ]
     }
   }
 }
 ```
+
+Rebuild with `npm run build` and restart the server after changing the source.
 
 Why choose it:
 

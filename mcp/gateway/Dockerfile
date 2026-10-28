@@ -1,5 +1,6 @@
-# Patch-only image: reuses the 1.0.4 runtime and dependencies, replaces server.mjs.
-ARG BASE_IMAGE=acradomcpdemo004.azurecr.io/ado-mcp-gateway:1.0.4
+# Patch-only image: reuses an existing ado-mcp-gateway 1.0.4 runtime and dependencies, replaces server.mjs.
+# Build with: docker build --build-arg BASE_IMAGE=<your-registry>.azurecr.io/ado-mcp-gateway:1.0.4 mcp/gateway
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 COPY server.mjs /app/server.mjs

@@ -13,8 +13,9 @@ This runbook maps to the live session agenda and uses the Azure Container Apps M
 - VS Code or VS Code Insiders has GitHub Copilot and MCP support enabled.
 - You have access to an Azure DevOps Services organization backed by Microsoft Entra ID.
 - Your user account has permission to read project metadata and create or update work items.
-- Your network allows outbound HTTPS access to `ado-mcp-gateway.yellowmeadow-a79e4e9c.westus2.azurecontainerapps.io`.
+- Your network allows outbound HTTPS access to your gateway host (`<your-container-app-fqdn>`).
 - Optional fallback only: Docker Desktop is installed and running, and you have an Azure DevOps PAT.
+- Optional local alternative: Node.js 20 or later for the `ado-local-npm` or `ado-local-source` servers (Git too, for building from source).
 - Optional for agenda items 6 and 7: you have a GitHub Enterprise Server repo that Copilot can modify and push to.
 
 > **Note:** The remote Azure DevOps MCP server requires an Azure DevOps Services organization backed by Microsoft Entra ID. Azure DevOps Server on-premises and standalone Microsoft account organizations are not supported by this remote flow.
@@ -36,6 +37,31 @@ flowchart LR
 - [../mcp/azure-devops/Dockerfile](../mcp/azure-devops/Dockerfile)
 - [../mcp/azure-devops/entrypoint.sh](../mcp/azure-devops/entrypoint.sh)
 - [../mcp/azure-devops/.env.example](../mcp/azure-devops/.env.example)
+- [ado-create-work-items](../.github/skills/ado-create-work-items/SKILL.md)
+- [ado-implement-work-item](../.github/skills/ado-implement-work-item/SKILL.md)
+- [ado-implement-work-item-with-pr](../.github/skills/ado-implement-work-item-with-pr/SKILL.md)
+
+### Skill-guided prompts
+
+These skills are adapted to this hosted-gateway demo and do not require the source
+repository's calculator documents. Replace every placeholder before execution.
+
+```text
+Use ado-create-work-items to preview a user story in organization "<organization>" and project "<project>" titled "Demo traceability through MCP", using the requirements and acceptance criteria I provide. Do not write anything.
+```
+
+After reviewing the proposed fields and criteria, explicitly request creation.
+Use the actual returned item ID for implementation:
+
+```text
+Use ado-implement-work-item for work item <id> in organization "<organization>" and project "<project>". Read it through ado-remote-mcp, implement its acceptance criteria in the selected target repository, and validate. Do not commit, push, or change Azure DevOps.
+```
+
+For the full traceability loop in a clean, authenticated GitHub/GHES checkout:
+
+```text
+Use ado-implement-work-item-with-pr for work item <id> in organization "<organization>" and project "<project>". Plan implementation, validation, feature branch, commit, push, PR, and a work-item comment with the verified URLs. Let me review the full plan before making changes. Leave the work-item state unchanged.
+```
 
 ## Session Flow
 
@@ -50,10 +76,11 @@ Show the architecture diagram above, then point out that the only Azure DevOps-s
 ### 3. Remote MCP setup
 
 1. Open [../.vscode/mcp.json](../.vscode/mcp.json).
-2. Confirm that the workspace points to `https://ado-mcp-gateway.yellowmeadow-a79e4e9c.westus2.azurecontainerapps.io/mcp`.
+2. Confirm that `ado-remote-mcp` prompts for the gateway URL (`https://<your-container-app-fqdn>/mcp`) and shared token.
 3. From the MCP view in VS Code, start `ado-remote-mcp`.
 4. Complete the gateway authentication flow when prompted.
-5. If the client cannot authenticate to the gateway, use the local Docker assets in `mcp/azure-devops` as a separate fallback.
+5. If the client cannot authenticate to the gateway, or the audience wants to run the server locally, start `ado-local-npm` instead, or build it from source and start `ado-local-source`. See [Run Locally with npm](../README.md#run-locally-with-npm). These use each person's own Microsoft Entra sign-in and expose the same tools.
+6. The local Docker assets in `mcp/azure-devops` remain a separate PAT-based fallback.
 
 ### 4. Client configuration: pointing mcp.json at the hosted endpoint
 
@@ -106,9 +133,10 @@ Add a markdown comment to work item 12345 that links to https://ghe.example.com/
 
 - The gateway handles authentication; do not add access tokens or PATs to the repository configuration.
 - Make sure the Azure DevOps organization is backed by Microsoft Entra ID and that your user has the required project permissions.
-- Network policy must allow outbound HTTPS traffic to `ado-mcp-gateway.yellowmeadow-a79e4e9c.westus2.azurecontainerapps.io`.
+- Network policy must allow outbound HTTPS traffic to your gateway host (`<your-container-app-fqdn>`).
 - Azure DevOps permissions still determine which operations the authenticated user can perform.
 - Keep the local Docker setup only as a fallback for clients that cannot complete the remote authentication flow.
+- The local npm and source servers run as the signed-in user, so they need no shared token or PAT, but each attendee needs Node.js and their own Azure DevOps access.
 
 ### 9. Q&A and next steps
 
